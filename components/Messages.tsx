@@ -6,8 +6,8 @@ import { useEffect, useState } from "react";
 interface Message {
     id: number;
     created_at: string;
-    sender: "user" | "bot";
-    text: string;
+    role: "user" | "bot";
+    messages: string;
 }
 
 export default function Messages({ serverMessages }: { serverMessages: Message[] }) {
@@ -28,5 +28,19 @@ export default function Messages({ serverMessages }: { serverMessages: Message[]
         }
     }, [supabase, messages, setMessages])
 
-    return <pre>{JSON.stringify(messages, null, 2)}</pre>
+    return (
+        <div className="flex-1 overflow-y-auto space-y-2 p-4 border rounded-lg bg-white dark:bg-gray-800">
+            {messages.map((msg, index) => (
+                <div
+                    key={index}
+                    className={`p-2 rounded-lg w-fit max-w-xs ${msg.role === "user"
+                        ? "bg-blue-500 text-white self-end ml-auto"
+                        : "bg-gray-300 dark:bg-gray-700 text-black dark:text-white"
+                        }`}
+                >
+                    {msg.messages}
+                </div>
+            ))}
+        </div>
+    )
 }
