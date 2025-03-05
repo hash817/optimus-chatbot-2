@@ -1,43 +1,48 @@
 'use client'
 
-import React, { useRef } from "react";
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Send } from "lucide-react"
 import saveMessage from "@/app/chatbot/action";
-import { useFormStatus } from "react-dom";
 
 export default function ChatInput() {
-    const formRef = useRef<HTMLFormElement>(null)
-    const { pending } = useFormStatus()
-    console.log(pending)
+    const [inputValue, setInputValue] = useState("")
 
-    async function handlerSubmit(e: React.FormEvent<HTMLFormElement>) {
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setInputValue(e.target.value)
+    }
+
+    async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
-        const form = e.currentTarget as HTMLFormElement;
-        const fd = new FormData(form);
-
-        const message = fd.get('message') as string;
-        console.log(message)
-        await saveMessage(message)
-        if (formRef.current) {
-            formRef.current.reset()
-        }
+        if(!inputValue.trim()) return
+        setInputValue('')
+        await saveMessage(inputValue)
     }
 
     return (
-        <form ref={formRef} className="mt-4 flex items-center space-x-2" onSubmit={handlerSubmit}>
-            <input
-                type="text"
-                name="message"
-                placeholder="Ask an question about law"
-                className="flex-1 p-2 border rounded-lg bg-white dark:bg-gray-800 dark:text-white"
-            />
-            <button
-                type="submit"
-                disabled={pending}
-                className="p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+        <div className="fixed bottom-0 left-0 right-0 p-4 md:left-64">
+            <form
+                onSubmit={handleSubmit}
+                className="relative flex items-center rounded-lg border bg-background shadow-sm"
             >
-                {pending ? 'Sending' : 'Send'}
-            </button>
-        </form>
+                <Input
+                    placeholder="Type your message..."
+                    value={inputValue}
+                    onChange={handleInputChange}
+                    className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                />
+                <Button
+                    type="submit"
+                    size="icon"
+                    variant="ghost"
+                // className={cn("absolute right-1", isLoading && "animate-pulse")}
+                // disabled={isLoading || !inputValue.trim()}
+                >
+                    <Send className="h-5 w-5" />
+                </Button>
+            </form>
+        </div>
 
     )
 }
