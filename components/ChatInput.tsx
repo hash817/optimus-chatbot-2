@@ -21,7 +21,7 @@ export default function ChatInput() {
     }
 
     return (
-        <div className="fixed bottom-0 left-0 right-0 p-4 md:left-64">
+        <div className="fixed bottom-0 pb-5 mx-auto w-full max-w-3xl">
             <form
                 onSubmit={handleSubmit}
                 className="relative flex items-center rounded-lg border bg-background shadow-sm"
