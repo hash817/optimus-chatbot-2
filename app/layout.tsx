@@ -1,4 +1,5 @@
 import { Geist } from "next/font/google";
+import UiContextProvider from "@/store/ui-context";
 import "./globals.css";
 
 const defaultUrl = process.env.VERCEL_URL
@@ -25,7 +26,9 @@ export default function RootLayout({
     <html lang="en" >
       <body>
         <main>
-          {children}
+          <UiContextProvider>
+            {children}
+          </UiContextProvider>
         </main>
       </body>
     </html>

@@ -1,13 +1,15 @@
 'use client'
 
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { MessageSquare, Send } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { CreateChatSaveMessage } from "./action";
+import { CreateChatSaveMessage, botAnswer } from "./action";
 import { useRouter } from "next/navigation";
+import { UiContext } from "@/store/ui-context";
 
 export default function Chatbot() {
+    const { setIsLoading, setErrorMessage } = useContext(UiContext)
     const router = useRouter()
     const [inputValue, setInputValue] = useState("")
 
@@ -19,9 +21,17 @@ export default function Chatbot() {
         e.preventDefault();
         if (!inputValue.trim()) return
         setInputValue('')
-        const result = await CreateChatSaveMessage(inputValue)
-        if(result?.success){
-            router.push(`/chatbot/${result.id}`)
+        try {
+            setIsLoading(true)
+            const saveUserMessageResponse = await CreateChatSaveMessage(inputValue)
+            if (!saveUserMessageResponse.success) throw saveUserMessageResponse.message
+            router.push(`/chatbot/${saveUserMessageResponse.id}`)
+            const botAnswerResponse = await botAnswer(inputValue, saveUserMessageResponse.id)
+            if (!botAnswerResponse.success) throw botAnswerResponse.message
+        } catch (error) {
+            setErrorMessage(error.message)
+        } finally {
+            setIsLoading(false)
         }
     }
     return (

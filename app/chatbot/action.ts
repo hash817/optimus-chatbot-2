@@ -2,286 +2,216 @@
 
 import { createClient } from "@/utils/supabase/server";
 import OpenAI from "openai";
-import { z } from "zod";
 import { zodResponseFormat } from "openai/helpers/zod";
+import {
+    generateDocument,
+    generateRerankPrompt,
+    OPENAI_CHAT_COMPLETIONS_SYSTEM_MESSAGES_CONTENT,
+    OPENAI_CHAT_COMPLETIONS_MODEL, OPENAI_CHAT_COMPLETIONS_TEMPERATURE,
+    OPENAI_EMBEDDING_ENCODING_FORMAT, OPENAI_EMBEDDING_MODEL,
+    SUPABASE_RPC_MATCH_COUNT,
+    SUPABASE_RPC_MATCH_THRESHOLD,
+    OPENAI_BETA_CHAT_COMPLETION_PARSE_SYSTEM_MESSAGE_CONTENT,
+    DocumentType,
+    OPENAI_BETA_CHAT_COMPLETION_PARSE_TEMPERATURE,
+    generateFinalResponseSystemMessageContent,
+    OPENAI_FINAL_RESPONSE_CHAT_COMPLETION_TEMPERATURE,
+    DocumentsSchema,
+    SAVE_MESSAGE_OPENAI_CHAT_COMPLETIONS_SYSTEM_MESSAGES_CONTENT,
+    TOOLS,
+    SAVE_MESSAGE_OPENAI_CHAT_COMPLETIONS_TEMPERATURE
+} from "@/utils/openai";
 
 const openai = new OpenAI();
-// const str = "I have been working as a marketing executive at a mid-sized company in Singapore for the past two years. Recently, I received a termination letter from my employer, stating that my employment would end in one month. The letter did not provide any reasons for the termination. I am unsure whether this termination is lawful and if I am entitled to any compensation or recourse.";
 
-const tools: OpenAI.ChatCompletionTool[] = [
-    {
-        type: "function",
-        function: {
-            name: "legal_advice",
-            description:
-                "Get detailed information about Singapore law to help answer the user query accurately",
-            parameters: {
-                type: "object",
-                properties: {
-                    query: {
-                        type: "string",
-                        description:
-                            "The user's query that is formatted with no broken english but do not summarise or change the meaning of the user's query",
-                    },
-                },
-                required: ["query"],
-                additionalProperties: false,
-            },
-            strict: true,
-        },
-    },
-];
-
-async function legal_advice(query: string): Promise<string> {
+export async function botAnswer(messages: string, chatId: number)
+    : Promise<{ success: boolean; message: string }> {
     const completion = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
+        model: OPENAI_CHAT_COMPLETIONS_MODEL,
         messages: [
             {
                 role: "system",
-                content: `You are a legal assistant for Singapore Law. 
-        Analyze the user's query and provide a document of relevant sections from Singapore Acts and Statutues that will give insights for his conerns.
-        You do not have to explain your document, just provide them in a concise format`,
-            },
-            {
-                role: "user",
-                content: query,
-            },
-        ],
-        temperature: 0,
-    });
-    console.log(completion.choices[0]?.message?.content)
-    const supabase = await createClient();
-    openai.embeddings
-        .create({
-            model: "text-embedding-3-small",
-            input: completion.choices[0]?.message?.content as string,
-            encoding_format: "float",
-        })
-        .then((completion2) => {
-            const embeddingVector = completion2.data[0].embedding;
-            supabase
-                .rpc("match_documents", {
-                    query_embedding: embeddingVector,
-                    match_threshold: 0.5,
-                    match_count: 10,
-                })
-                // supabase
-                // .rpc("hybrid_search", {
-                //   query_text: query,
-                //   query_embedding: embeddingVector,
-                //   match_count: 10,
-                // })
-                .then(({ data, error }) => {
-                    if (error) {
-                        throw error;
-                    }
-                    console.log(data)
-                    if (data.length !== 0) {
-                        const rerank_prompt = `These are some documents retrieved from various Singapore Law Acts and Statutes. Evaluate them and find out the most relevant and helpful documents to answer the user query. You can respond with either one or multiple documents depending on how relevant and helpful they are to the user query but strictly no returning duplicate of documents.\n\nThe user's query: ${query}\n\n`;
-
-                        const documents = (data as DocumentType[])
-                            .map(
-                                (x) =>
-                                    `Act: ${x.act ?? ""} | Part section: ${x.part_id ?? ""} | Part title: ${x.part_title ?? ""} | Section title: ${x.title ?? ""} | Section content: ${x.content ?? ""}\n\n`
-                            )
-                            .join("");
-                        console.log('document documentdocumentdocumentdocumentdocumentdocumentdocumentdocumentdocumentdocumentdocumentdocument')
-                        console.log(documents)
-                        openai.beta.chat.completions
-                            .parse({
-                                model: "gpt-4o-mini",
-                                messages: [
-                                    {
-                                        role: "system",
-                                        content: `You are a legal assistant for Singapore Law.`,
-                                    },
-                                    {
-                                        role: "user",
-                                        content: rerank_prompt + documents,
-                                    },
-                                ],
-                                response_format: zodResponseFormat(DocumentsSchema, "documents"),
-                                temperature: 0,
-                            })
-                            .then((response) => {
-                                const obj = response.choices[0].message.parsed;
-                                console.log("==================================================");
-                                let resultStr = '';
-
-                                for (const x of obj!.documents_l) {
-                                    for (const key in x) {
-                                        if (Object.prototype.hasOwnProperty.call(x, key)) {
-                                            resultStr += `${key}: ${x[key]} | `;
-                                        }
-                                    }
-                                    resultStr += '\n\n';
-                                }
-                                console.log("Response content:", resultStr);
-                                openai.chat.completions.create({
-                                    model: "gpt-4o-mini",
-                                    messages: [
-                                        {
-                                            role: "system",
-                                            content: `You are a legal assistant for Singapore Law.
-                            Here are some documents retrieved from various Singapore Acts to help you answer the user query.\n\n
-                            ${resultStr}
-                            `,
-                                        },
-                                        {
-                                            role: "user",
-                                            content: `${query}`,
-                                        },
-                                    ],
-                                    temperature: 0,
-                                }).then((response) => {
-                                    console.log(response.choices[0].message.content) // 1. FINAL OUTPUT FROM LLM!!!!
-                                })
-                            })
-                            .catch((error) => {
-                                console.error("Error:", error);
-                            });
-                    } else {
-                        console.log('Empty data: ', data)
-                        console.log('Sorry, optimus is not smart enough to help with your request') // 2. FALL BACK OUTPUT FROM LLM!!!
-                    }
-
-                });
-
-        })
-        .catch((error) => {
-            console.error("Error creating embedding:", error);
-        });
-    // console.log("tool called", completion.choices[0]?.message?.content);
-    return 'test'
-}
-interface Message {
-    id: number;
-    created_at: string;
-    role: "user" | "bot";
-    messages: string;
-}
-
-const DocumentSchema = z.object({
-    act: z.string(),
-    part_id: z.string(),
-    part_title: z.string(),
-    title: z.string(),
-    content: z.string(),
-});
-
-type DocumentType = z.infer<typeof DocumentSchema>;
-
-const DocumentsSchema = z.object({
-    documents_l: z.array(DocumentSchema),
-});
-
-export default async function saveMessage(
-    messages: string
-): Promise<{ error: string } | undefined> {
-    console.log("test");
-
-    if (!messages) {
-        return;
-    }
-    const supabase = await createClient();
-    const completion = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
-        messages: [
-            {
-                role: "system",
-                content: `
-          You are a legal assistant for Singapore Law. You have access to the following tool but only allowed to use each tool once:
-          - 'legal_advice': This tool is used to provide legal advice and summaries of Singapore laws. Use this tool when the user asks a legal question related to Singapore.
-
-          For any other general user queries that are irrelevant to Singapore law or lawyer context or greetings, respond with: "Hi how may i help you."
-          `,
+                content: SAVE_MESSAGE_OPENAI_CHAT_COMPLETIONS_SYSTEM_MESSAGES_CONTENT,
             },
             { role: "user", content: messages },
         ],
-        temperature: 0,
-        tools,
-        tool_choice: "auto",
+        temperature: SAVE_MESSAGE_OPENAI_CHAT_COMPLETIONS_TEMPERATURE,
+        tools: TOOLS,
+        tool_choice: "auto"
     });
-    // console.log("aaaaaaaaaaaaaaaaa", completion.choices[0].message.tool_calls);
     if (completion.choices[0].message.tool_calls) {
         for (const toolCall of completion.choices[0].message.tool_calls) {
-            // const name = toolCall.function.name;
             const args = JSON.parse(toolCall.function.arguments);
-
-            legal_advice(args.query)
-                .then((result) => {
-                    console.log(result)
-                })
-                .catch((error) => {
-                    console.error("Error with legal advice:", error);
-                });
-
-            // messages.push({
-            //     role: "tool",
-            //     tool_call_id: toolCall.id,
-            //     content: result.toString()
-            // });
+            try {
+                const legalAdviceResponse = await legal_advice(args.query)
+                const saveBotMessage = await saveMessage(legalAdviceResponse, chatId, "bot")
+                return saveBotMessage
+            } catch (error) {
+                // console.log("Error with legal advice", error)
+                return {
+                    success: false,
+                    message: 'Server error. Please try again later'
+                }
+            }
         }
     } else {
-        console.log(completion.choices[0].message.content) // 3. FALLBACK OUTPUT FROM LLM !!!!!
+        // console.log('not use legal advice', completion.choices[0].message.content)
+        return await saveMessage(completion.choices[0].message.content, chatId, "bot")
     }
+}
 
-    // for await (const part of stream) {
-    //   process.stdout.write(part.choices[0]?.delta?.content || '');
-    // }
-    // process.stdout.write('\n');
-
+export async function saveMessage(messages: string, chatId: number, role: string)
+    : Promise<{ success: boolean; message: string }> {
+    const supabase = await createClient();
     const { error } = await supabase
         .from("Message")
-        .insert({ messages, role: "user" });
+        .insert({ messages, role, chat: chatId });
 
     if (error) {
         console.log(error);
         return {
-            error: "Server is busy",
-        };
-    }
-}
-
-
-export async function CreateChatSaveMessage(messages: string) {
-    const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,)
-
-    if (!messages) {
-        return
-    }
-
-    const { data: chatData, error: chatDataError } = await supabase
-        .from('chat')
-        .insert({ title: 'test' })
-        .select()
-        .single()
-
-    console.log(chatData)
-
-    if (chatDataError) {
-        console.log(chatDataError)
-        return {
-            chatDataError
-        }
-    }
-
-
-    const { data, error } = await supabase
-        .from('Message')
-        .insert({ messages, role: 'user', chat: chatData.id })
-
-    if (error) {
-        console.log(error)
-        return {
-            error: 'Server is busy'
+            success: false,
+            message: 'Server error. Please try again later'
         }
     }
 
     return {
         success: true,
-        id: chatData.id
+        message: 'Message insert successfully'
+    }
+}
+
+async function legal_advice(query: string): Promise<string> {
+    const completion = await openai.chat.completions.create({
+        model: OPENAI_CHAT_COMPLETIONS_MODEL,
+        messages: [
+            {
+                role: "system",
+                content: OPENAI_CHAT_COMPLETIONS_SYSTEM_MESSAGES_CONTENT
+            },
+            {
+                role: "user",
+                content: query
+            }
+        ],
+        temperature: OPENAI_CHAT_COMPLETIONS_TEMPERATURE
+    })
+
+    const supabase = await createClient();
+
+    try {
+        const embeddingResponse = await openai.embeddings.create({
+            model: OPENAI_EMBEDDING_MODEL,
+            input: completion.choices[0]?.message?.content as string,
+            encoding_format: OPENAI_EMBEDDING_ENCODING_FORMAT
+        })
+
+        const embeddingVector = embeddingResponse.data[0].embedding;
+
+        const { data, error } = await supabase.rpc("match_documents", {
+            query_embedding: embeddingVector,
+            match_threshold: SUPABASE_RPC_MATCH_THRESHOLD,
+            match_count: SUPABASE_RPC_MATCH_COUNT
+        });
+
+        if (error) throw error;
+
+        if (data.length !== 0) {
+            const rerank_prompt = generateRerankPrompt(query)
+            const documents = (data as DocumentType[])
+                .map(
+                    (x: DocumentType) => generateDocument(x)
+                )
+                .join("");
+
+            const response = await openai.beta.chat.completions.parse({
+                model: OPENAI_CHAT_COMPLETIONS_MODEL,
+                messages: [
+                    {
+                        role: "system",
+                        content: OPENAI_BETA_CHAT_COMPLETION_PARSE_SYSTEM_MESSAGE_CONTENT
+                    },
+                    {
+                        role: "user",
+                        content: rerank_prompt + documents
+                    }
+                ],
+                response_format: zodResponseFormat(DocumentsSchema, "documents"),
+                temperature: OPENAI_BETA_CHAT_COMPLETION_PARSE_TEMPERATURE
+            })
+
+            const obj = response.choices[0].message.parsed
+
+            let resultStr = "";
+
+            for (const x of obj!.documents_l) {
+                for (const key in x) {
+                    if (Object.prototype.hasOwnProperty.call(x, key)) {
+                        resultStr += `${key}: ${x[key as keyof DocumentType]} | `;
+                    }
+                }
+                resultStr += "\n\n";
+            }
+
+            const finalResponse = await openai.chat.completions.create({
+                model: OPENAI_CHAT_COMPLETIONS_MODEL,
+                messages: [
+                    {
+                        role: "system",
+                        content: generateFinalResponseSystemMessageContent(resultStr)
+                    },
+                    {
+                        role: "user",
+                        content: `${query}`
+                    }
+                ],
+                temperature: OPENAI_FINAL_RESPONSE_CHAT_COMPLETION_TEMPERATURE
+            })
+            console.log('legal return ------------------')
+            return finalResponse.choices[0].message.content;
+        } else {
+            console.log("Empty data:", data);
+            return "Sorry, optimus is not smart enough to help with your request";
+        }
+
+    } catch (error) {
+        console.error("Error:", error);
+        return "An error occurred while processing your request.";
+    }
+}
+
+
+export async function CreateChatSaveMessage(messages: string) {
+    const supabase = await createClient()
+
+    const { data: chatData, error: chatDataError } = await supabase
+        .from('chat')
+        .insert({ title: 'test' }) // generate title
+        .select()
+        .single()
+
+    if (chatDataError) {
+        console.log(chatDataError)
+        return {
+            success: false,
+            message: 'Failed to create new conversation window'
+        }
+    }
+
+    const res = await saveMessage(messages, chatData.id, "user")
+
+    if (res?.success) {
+        return {
+            success: true,
+            id: chatData.id,
+            message: 'Insert message successfully'
+        }
+    }
+
+    return {
+        success: false,
+        id: null,
+        message: 'Failed to insert message'
     }
 }
 
