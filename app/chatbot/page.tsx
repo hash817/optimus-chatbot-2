@@ -29,7 +29,7 @@ export default function Chatbot() {
             const botAnswerResponse = await botAnswer(inputValue, saveUserMessageResponse.id)
             if (!botAnswerResponse.success) throw botAnswerResponse.message
         } catch (error) {
-            setErrorMessage(error.message)
+            setErrorMessage(error)
         } finally {
             setIsLoading(false)
         }

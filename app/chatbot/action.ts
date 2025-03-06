@@ -26,38 +26,48 @@ const openai = new OpenAI();
 
 export async function botAnswer(messages: string, chatId: number)
     : Promise<{ success: boolean; message: string }> {
-    const completion = await openai.chat.completions.create({
-        model: OPENAI_CHAT_COMPLETIONS_MODEL,
-        messages: [
-            {
-                role: "system",
-                content: SAVE_MESSAGE_OPENAI_CHAT_COMPLETIONS_SYSTEM_MESSAGES_CONTENT,
-            },
-            { role: "user", content: messages },
-        ],
-        temperature: SAVE_MESSAGE_OPENAI_CHAT_COMPLETIONS_TEMPERATURE,
-        tools: TOOLS,
-        tool_choice: "auto"
-    });
-    if (completion.choices[0].message.tool_calls) {
-        for (const toolCall of completion.choices[0].message.tool_calls) {
-            const args = JSON.parse(toolCall.function.arguments);
-            try {
-                const legalAdviceResponse = await legal_advice(args.query)
-                const saveBotMessage = await saveMessage(legalAdviceResponse, chatId, "bot")
-                return saveBotMessage
-            } catch (error) {
-                // console.log("Error with legal advice", error)
-                return {
-                    success: false,
-                    message: 'Server error. Please try again later'
+
+    try {
+        const completion = await openai.chat.completions.create({
+            model: OPENAI_CHAT_COMPLETIONS_MODEL,
+            messages: [
+                {
+                    role: "system",
+                    content: SAVE_MESSAGE_OPENAI_CHAT_COMPLETIONS_SYSTEM_MESSAGES_CONTENT,
+                },
+                { role: "user", content: messages },
+            ],
+            temperature: SAVE_MESSAGE_OPENAI_CHAT_COMPLETIONS_TEMPERATURE,
+            tools: TOOLS,
+            tool_choice: "auto"
+        });
+        if (completion.choices[0].message.tool_calls) {
+            for (const toolCall of completion.choices[0].message.tool_calls) {
+                const args = JSON.parse(toolCall.function.arguments);
+                try {
+                    const legalAdviceResponse = await legal_advice(args.query)
+                    const saveBotMessage = await saveMessage(legalAdviceResponse, chatId, "bot")
+                    return saveBotMessage
+                } catch (error) {
+                    // console.log("Error with legal advice", error)
+                    return {
+                        success: false,
+                        message: 'Server error. Please try again later'
+                    }
                 }
             }
+        } else {
+            // console.log('not use legal advice', completion.choices[0].message.content)
+            return await saveMessage(completion.choices[0].message.content, chatId, "bot")
         }
-    } else {
-        // console.log('not use legal advice', completion.choices[0].message.content)
-        return await saveMessage(completion.choices[0].message.content, chatId, "bot")
+    } catch (error) {
+        console.log('api key wrong')
+        return {
+            success: false,
+            message: 'Server error. Please try again later'
+        }
     }
+
 }
 
 export async function saveMessage(messages: string, chatId: number, role: string)
@@ -70,48 +80,8 @@ export async function saveMessage(messages: string, chatId: number, role: string
     if (error) {
         console.log(error);
         return {
-<<<<<<< HEAD
             success: false,
             message: 'Server error. Please try again later'
-=======
-            error: "Server is busy",
-        };
-    }
-}
-
-
-export async function CreateChatSaveMessage(messages: string) {
-    const supabase = await createClient()
-
-    if (!messages) {
-        return
-    }
-
-    const { data: chatData, error: chatDataError } = await supabase
-        .from('chat')
-        .insert({ title: 'test' })
-        .select()
-        .single()
-
-    console.log(chatData)
-
-    if (chatDataError) {
-        console.log(chatDataError)
-        return {
-            chatDataError
-        }
-    }
-
-
-    const { data, error } = await supabase
-        .from('Message')
-        .insert({ messages, role: 'user', chat: chatData.id })
-
-    if (error) {
-        console.log(error)
-        return {
-            error: 'Server is busy'
->>>>>>> 866436172db974d2a78f512a96c0205ff9e7e0f5
         }
     }
 

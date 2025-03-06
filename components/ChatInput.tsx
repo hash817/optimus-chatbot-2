@@ -23,13 +23,12 @@ export default function ChatInput() {
         try {
             setIsLoading(true)
             const saveUserMessageResponse = await saveMessage(inputValue, param.chatId, "user")
-            console.log(saveUserMessageResponse)
             if (!saveUserMessageResponse.success) throw saveUserMessageResponse.message
             const botAnswerResponse = await botAnswer(inputValue, param.chatId)
-            console.log(botAnswerResponse)
             if (!botAnswerResponse.success) throw botAnswerResponse.message
         } catch (error) {
-            setErrorMessage(error.message)
+            console.log(error)
+            setErrorMessage(error)
         } finally {
             setIsLoading(false)
         }
