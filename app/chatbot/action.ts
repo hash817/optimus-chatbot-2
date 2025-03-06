@@ -70,8 +70,48 @@ export async function saveMessage(messages: string, chatId: number, role: string
     if (error) {
         console.log(error);
         return {
+<<<<<<< HEAD
             success: false,
             message: 'Server error. Please try again later'
+=======
+            error: "Server is busy",
+        };
+    }
+}
+
+
+export async function CreateChatSaveMessage(messages: string) {
+    const supabase = await createClient()
+
+    if (!messages) {
+        return
+    }
+
+    const { data: chatData, error: chatDataError } = await supabase
+        .from('chat')
+        .insert({ title: 'test' })
+        .select()
+        .single()
+
+    console.log(chatData)
+
+    if (chatDataError) {
+        console.log(chatDataError)
+        return {
+            chatDataError
+        }
+    }
+
+
+    const { data, error } = await supabase
+        .from('Message')
+        .insert({ messages, role: 'user', chat: chatData.id })
+
+    if (error) {
+        console.log(error)
+        return {
+            error: 'Server is busy'
+>>>>>>> 866436172db974d2a78f512a96c0205ff9e7e0f5
         }
     }
 
