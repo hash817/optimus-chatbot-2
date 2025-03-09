@@ -196,10 +196,10 @@ export async function CreateChatSaveMessage(messages: string) {
 
     const { data: chatData, error: chatDataError } = await supabase
         .from('chat')
-        .insert({ title: 'test' }) // generate title
+        .insert({ title: await generateTitle(messages)})
         .select()
         .single()
-
+    console.log('insert chat ------------------------------------')
     if (chatDataError) {
         console.log(chatDataError)
         return {
@@ -225,3 +225,27 @@ export async function CreateChatSaveMessage(messages: string) {
     }
 }
 
+async function generateTitle(message: string) {
+    const completion = await openai.chat.completions.create({
+        model: OPENAI_CHAT_COMPLETIONS_MODEL,
+        messages: [
+            {
+                role: "system",
+                content: 'Please summarise the message to generate a title'
+            },
+            {
+                role: "user",
+                content: message
+            }
+        ],
+        temperature: OPENAI_CHAT_COMPLETIONS_TEMPERATURE
+    })
+    return completion.choices[0].message.content?.replace(/^["']|["']$/g, "");   
+}
+
+// async function getUser(){
+//     const supabase = await createClient()
+//     const {data: {user}} = await supabase.auth.getUser()
+//     console.log('user:', user) 
+//     return user
+// }
