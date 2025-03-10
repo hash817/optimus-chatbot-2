@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/sidebar"
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
+import SourceSidebar from "@/components/SourceSidebar";
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -27,40 +28,43 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const supabase = await createClient()
-  const {data: {user}} = await supabase.auth.getUser()
-  if(!user){
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
     return redirect('/sign-in')
   }
   const { data } = await supabase.from('chat').select()
 
   return (
-    <SidebarProvider>
-      <AppSidebar chats={data ?? []} />
-      <SidebarInset>
-        <header className="flex h-14 shrink-0 items-center gap-2">
-          <div className="flex flex-1 items-center gap-2 px-3">
-            <SidebarTrigger />
-            <Separator orientation="vertical" className="mr-2 h-4" />
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem>
-                  {/* <BreadcrumbPage className="line-clamp-1">
+    <>
+      <SidebarProvider>
+        <AppSidebar chats={data ?? []} />
+        <SidebarInset>
+          <header className="flex h-14 shrink-0 items-center gap-2">
+            <div className="flex flex-1 items-center gap-2 px-3">
+              <SidebarTrigger />
+              <Separator orientation="vertical" className="mr-2 h-4" />
+              <Breadcrumb>
+                <BreadcrumbList>
+                  <BreadcrumbItem>
+                    {/* <BreadcrumbPage className="line-clamp-1">
                     Project Management & Task Tracking
                   </BreadcrumbPage> */}
-                </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
-          </div>
-          {/* <div className="ml-auto px-3">
+                  </BreadcrumbItem>
+                </BreadcrumbList>
+              </Breadcrumb>
+            </div>
+            {/* <div className="ml-auto px-3">
             <NavActions />
           </div> */}
-        </header>
-        <div className="flex flex-1 flex-col gap-4 px-4 py-10">
-          <div className="mx-auto h-full w-full max-w-3xl">
-            {children}
+          </header>
+          <div className="flex flex-1 flex-col gap-4 px-4 py-10">
+            <div className="mx-auto h-full w-full max-w-3xl">
+              {children}
+            </div>
           </div>
-        </div>
-      </SidebarInset>
-    </SidebarProvider>
+        </SidebarInset>
+        <SourceSidebar />
+      </SidebarProvider>
+    </>
   )
 }

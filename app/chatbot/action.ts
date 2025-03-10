@@ -45,8 +45,8 @@ export async function botAnswer(messages: string, chatId: number)
             for (const toolCall of completion.choices[0].message.tool_calls) {
                 const args = JSON.parse(toolCall.function.arguments);
                 try {
-                    const legalAdviceResponse = await legal_advice(args.query)
-                    const saveBotMessage = await saveMessage(legalAdviceResponse, chatId, "bot")
+                    const {legal_advice: advice, sources} = await legal_advice(args.query)
+                    const saveBotMessage = await saveMessage(advice, chatId, "bot", sources)
                     return saveBotMessage
                 } catch (error) {
                     // console.log("Error with legal advice", error)
@@ -70,12 +70,12 @@ export async function botAnswer(messages: string, chatId: number)
 
 }
 
-export async function saveMessage(messages: string, chatId: number, role: string)
+export async function saveMessage(messages: string, chatId: number, role: string, sources: any)
     : Promise<{ success: boolean; message: string }> {
     const supabase = await createClient();
     const { error } = await supabase
         .from("Message")
-        .insert({ messages, role, chat: chatId });
+        .insert({ messages, role, chat: chatId, sources: sources });
 
     if (error) {
         console.log(error);
@@ -91,7 +91,7 @@ export async function saveMessage(messages: string, chatId: number, role: string
     }
 }
 
-async function legal_advice(query: string): Promise<string> {
+async function legal_advice(query: string): Promise<any> {
     const completion = await openai.chat.completions.create({
         model: OPENAI_CHAT_COMPLETIONS_MODEL,
         messages: [
@@ -151,7 +151,7 @@ async function legal_advice(query: string): Promise<string> {
             })
 
             const obj = response.choices[0].message.parsed
-
+            console.log('obj: ' + obj)
             let resultStr = "";
 
             for (const x of obj!.documents_l) {
@@ -162,6 +162,8 @@ async function legal_advice(query: string): Promise<string> {
                 }
                 resultStr += "\n\n";
             }
+
+
 
             const finalResponse = await openai.chat.completions.create({
                 model: OPENAI_CHAT_COMPLETIONS_MODEL,
@@ -178,7 +180,10 @@ async function legal_advice(query: string): Promise<string> {
                 temperature: OPENAI_FINAL_RESPONSE_CHAT_COMPLETION_TEMPERATURE
             })
             console.log('legal return ------------------')
-            return finalResponse.choices[0].message.content;
+            return {
+                legal_advice: finalResponse.choices[0].message.content,
+                sources: obj
+            }
         } else {
             console.log("Empty data:", data);
             return "Sorry, optimus is not smart enough to help with your request";

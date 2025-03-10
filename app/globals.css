@@ -83,3 +83,8 @@
     @apply bg-background text-foreground;
   }
 }
+
+ol {
+  list-style: decimal;
+  padding-left: 2rem;
+}
