@@ -26,11 +26,21 @@ import {
   SidebarContent,
   SidebarHeader,
   SidebarRail,
+  SidebarFooter
 } from "@/components/ui/sidebar"
+import { NavUser } from "@/components/nav-user"
+import { userInterface } from "@/components/nav-user"
+import { createClient } from '@/utils/supabase/client'
+import { useEffect, useState } from 'react'
 import { useRouter } from "next/navigation";
 
 // This is sample data.
 const data = {
+  user: {
+    name: "shadcn",
+    email: "m@example.com",
+    avatar: "/avatars/shadcn.jpg",
+  },
   teams: [
     {
       name: "Acme Inc",
@@ -257,11 +267,25 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
 
 export function AppSidebar({ chats, ...props }: AppSidebarProps) {
   const router = useRouter()
-
+  const [userSession, setUserSession] = useState<userInterface>({
+    name: '',
+    email: '',
+  })
+  const supabase = createClient()
   function navigateToChatbot() {
     router.push('/chatbot')
   }
 
+  useEffect (() => {
+     supabase.auth.getUser().then((session) => {
+       console.log(session)
+       setUserSession({
+        name: session.data.user!.email!.substring(0, session.data.user!.email!.indexOf('@')) as string,
+        email:session.data.user!.email as string,
+      })
+     });
+   }, [])
+ 
   return (
     <Sidebar className="border-r-0" {...props}>
       <SidebarHeader>
@@ -281,6 +305,9 @@ export function AppSidebar({ chats, ...props }: AppSidebarProps) {
         <NavFavorites favorites={chats} />
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
+      <SidebarFooter>
+        <NavUser user={userSession!} />
+      </SidebarFooter>
       <SidebarRail />
     </Sidebar>
   )
