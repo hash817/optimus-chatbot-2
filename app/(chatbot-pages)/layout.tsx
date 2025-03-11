@@ -46,18 +46,12 @@ export default async function RootLayout({
               <Breadcrumb>
                 <BreadcrumbList>
                   <BreadcrumbItem>
-                    {/* <BreadcrumbPage className="line-clamp-1">
-                    Project Management & Task Tracking
-                  </BreadcrumbPage> */}
                   </BreadcrumbItem>
                 </BreadcrumbList>
               </Breadcrumb>
             </div>
-            {/* <div className="ml-auto px-3">
-            <NavActions />
-          </div> */}
           </header>
-          <div className="flex flex-1 flex-col gap-4 px-4 py-10">
+          <div className="flex flex-1 flex-col gap-4 px-4">
             <div className="mx-auto h-full w-full max-w-3xl">
               {children}
             </div>
