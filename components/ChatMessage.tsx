@@ -16,7 +16,7 @@ interface Message {
 export function ChatMessage({ message }: { message: Message }) {
   const { setSelectedMessageId } = useContext(UiContext)
     return (
-        <div className="relative">
+        <div  className={cn(message.role === "user" ? "ml-auto relative" : "relative")} >
             {message.role === "bot" && <Button
                 variant="ghost" size="sm"
                 className="absolute top-2 right-2 text-xs"

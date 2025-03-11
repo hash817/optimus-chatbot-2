@@ -4,7 +4,7 @@ import React, { useContext, useState } from "react";
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Send } from "lucide-react"
-import { saveMessage, botAnswer } from "@/app/chatbot/action";
+import { saveMessage, botAnswer } from "@/app/(chatbot-pages)/chatbot/action";
 import { useParams } from "next/navigation";
 import { UiContext } from "@/store/ui-context";
 
