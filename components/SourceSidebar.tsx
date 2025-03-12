@@ -20,7 +20,12 @@ interface SourceSidebarProps {
 const supabase = createClient()
 
 export default function SourceSidebar() {
-  const { selectedMessageId, setSelectedMessageId } = useContext(UiContext)
+  const uiContext = useContext(UiContext);
+
+  if (!uiContext) {
+    return <p>Something went wrong!!!</p>
+  }
+  const { selectedMessageId, setSelectedMessageId } = uiContext
   const [loading, setLoading] = useState(false)
   const [sources, setSources] = useState([])
 

@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 interface JudgmentCardProps {
   title: string
   paragraph_summary: string,
@@ -5,13 +7,14 @@ interface JudgmentCardProps {
   court: string,
   judgment_date: string
   keyword: string
+  id: number
 }
 
-export function JudgmentCard({ title, paragraph_summary, original_url, court, judgment_date, keyword }: JudgmentCardProps) {
+export function JudgmentCard({ title, paragraph_summary, original_url, court, judgment_date, keyword, id }: JudgmentCardProps) {
   return (
     <div className="p-4 mb-4 bg-white rounded shadow">
       <h2 className="text-lg font-semibold text-gray-800">
-        {title}
+        <Link href={`/search/${id}`}>{title}</Link>
       </h2>
       <p className="mt-2 text-sm text-gray-500">
         {paragraph_summary}

@@ -7,16 +7,22 @@ import { useContext } from "react";
 import { UiContext } from "@/store/ui-context";
 
 interface Message {
-    id: number;
+    id: string;
     created_at: string;
     role: "user" | "bot";
     messages: string;
 }
 
 export function ChatMessage({ message }: { message: Message }) {
-  const { setSelectedMessageId } = useContext(UiContext)
+    const uiContext = useContext(UiContext);
+
+    if (!uiContext) {
+        return <p>Something went wrong!!!</p>
+    }
+
+    const { setSelectedMessageId } = uiContext;
     return (
-        <div  className={cn(message.role === "user" ? "ml-auto relative" : "relative")} >
+        <div className={cn(message.role === "user" ? "ml-auto relative" : "relative")} >
             {message.role === "bot" && <Button
                 variant="ghost" size="sm"
                 className="absolute top-2 right-2 text-xs"

@@ -13,9 +13,7 @@ export function SourceDisplay({ source }: SourceDisplayProps) {
         <div className="space-y-6">
             <div>
                 <h3 className="text-xl font-semibold text-primary">{source.act}</h3>
-                <p className="text-sm text-muted-foreground">
-                    {source.part_id} - {source.part_title}
-                </p>
+                {source.part_id && source.part_title && <p className="text-sm text-muted-foreground">{source.part_id} - {source.part_title}</p>}
             </div>
             <div className="border-b border-border pb-4">
                 <h4 className="text-lg font-medium text-primary">{source.title}</h4>
