@@ -15,7 +15,7 @@ export default async function Login(props: { searchParams: Promise<Message> }) {
       return redirect('/')
     }
   return (
-    <form className="flex flex-col min-w-64 max-w-64 mx-auto">
+    <form className="flex flex-col min-w-128 max-w-128 mx-auto shadow-lg p-10 rounded-md">
       <h1 className="text-2xl font-medium">Sign in</h1>
       <p className="text-sm text-foreground">
         Don't have an account?{" "}

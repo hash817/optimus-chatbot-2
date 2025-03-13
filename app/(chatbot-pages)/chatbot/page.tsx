@@ -38,14 +38,14 @@ export default function Chatbot() {
         <div className="mx-auto flex h-full max-w-2xl flex-col items-center justify-center space-y-6 text-center">
             {!isLoading && <>
                 <MessageSquare className="h-12 w-12 text-primary" />
-                <h1 className="text-2xl font-bold">Welcome to Optimus AI</h1>
+                <h1 className="text-2xl font-bold">Welcome to OptimusLex chat</h1>
                 <p className="text-muted-foreground">Start a conversation with the AI assistant by typing a message below.</p>
                 <div className="rounded-lg border bg-muted/50 p-4">
                     <p className="text-sm text-muted-foreground">Try asking:</p>
                     <ul className="mt-2 space-y-2 text-sm text-left">
-                        <li>• "What are the benefits of using Next.js?"</li>
-                        <li>• "Write a short story about a robot learning to paint"</li>
-                        <li>• "Explain quantum computing in simple terms"</li>
+                        <li>• "Is it illegal to chew gum in Singapore?"</li>
+                        <li>• "Can my employer terminate me without notice?"</li>
+                        <li>• "Can my landlord evict me without notice?"</li>
                     </ul>
                 </div>
                 <form className="flex gap-2" onSubmit={handleSubmit}>
