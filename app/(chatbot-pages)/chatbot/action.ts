@@ -24,10 +24,37 @@ import {
 
 const openai = new OpenAI();
 
-export async function botAnswer(messages: string, chatId: number)
+export async function botAnswer(newMessage: string, chatId: number)
     : Promise<{ success: boolean; message: string }> {
 
     try {
+        // Fetch previous messages from Supabase
+        const supabase = await createClient();
+        const { data: messageHistory, error: messageError } = await supabase
+            .from('Message')
+            .select('messages, role')
+            .eq('chat', chatId)
+            .order('created_at', { ascending: true });
+            
+        if (messageError) {
+            console.error("Error fetching message history:", messageError);
+            return {
+                success: false,
+                message: 'Failed to retrieve conversation history'
+            };
+        }
+        
+        // Format messages for OpenAI
+        const formattedMessages = messageHistory.map(msg => ({
+          role: msg.role === "bot" ? "assistant" : "user",
+          content: msg.messages
+      }));
+      
+        
+        // Add the new message
+        formattedMessages.push({ role: "user", content: newMessage });
+        
+        // Make the API call with conversation history
         const completion = await openai.chat.completions.create({
             model: OPENAI_CHAT_COMPLETIONS_MODEL,
             messages: [
@@ -35,21 +62,22 @@ export async function botAnswer(messages: string, chatId: number)
                     role: "system",
                     content: SAVE_MESSAGE_OPENAI_CHAT_COMPLETIONS_SYSTEM_MESSAGES_CONTENT,
                 },
-                { role: "user", content: messages },
+                ...formattedMessages, // Include the conversation history
             ],
             temperature: SAVE_MESSAGE_OPENAI_CHAT_COMPLETIONS_TEMPERATURE,
             tools: TOOLS,
             tool_choice: "auto"
         });
+        
+        // Process the response (rest of your code)
         if (completion.choices[0].message.tool_calls) {
             for (const toolCall of completion.choices[0].message.tool_calls) {
                 const args = JSON.parse(toolCall.function.arguments);
                 try {
-                    const {legal_advice: advice, sources} = await legal_advice(args.query)
+                    const {legal_advice: advice, sources} = await legal_advice(args.query, formattedMessages)
                     const saveBotMessage = await saveMessage(advice, chatId, "bot", sources)
                     return saveBotMessage
                 } catch (error) {
-                    // console.log("Error with legal advice", error)
                     return {
                         success: false,
                         message: 'Server error. Please try again later'
@@ -57,17 +85,15 @@ export async function botAnswer(messages: string, chatId: number)
                 }
             }
         } else {
-            // console.log('not use legal advice', completion.choices[0].message.content)
             return await saveMessage(completion.choices[0].message.content, chatId, "bot")
         }
     } catch (error) {
-        console.log('api key wrong')
+        console.log('API error:', error);
         return {
             success: false,
             message: 'Server error. Please try again later'
         }
     }
-
 }
 
 export async function saveMessage(messages: string, chatId: number, role: string, sources: any)
@@ -91,28 +117,30 @@ export async function saveMessage(messages: string, chatId: number, role: string
     }
 }
 
-async function legal_advice(query: string): Promise<any> {
-    const completion = await openai.chat.completions.create({
-        model: OPENAI_CHAT_COMPLETIONS_MODEL,
-        messages: [
-            {
-                role: "system",
-                content: OPENAI_CHAT_COMPLETIONS_SYSTEM_MESSAGES_CONTENT
-            },
-            {
-                role: "user",
-                content: query
-            }
-        ],
-        temperature: OPENAI_CHAT_COMPLETIONS_TEMPERATURE
-    })
+async function legal_advice(query: string, conversationHistory: any[] = []): Promise<any> {
+  const completion = await openai.chat.completions.create({
+      model: OPENAI_CHAT_COMPLETIONS_MODEL,
+      messages: [
+          {
+              role: "system",
+              content: OPENAI_CHAT_COMPLETIONS_SYSTEM_MESSAGES_CONTENT
+          },
+          ...conversationHistory, // Include conversation history
+          {
+              role: "user",
+              content: query
+          }
+      ],
+      temperature: OPENAI_CHAT_COMPLETIONS_TEMPERATURE
+  })
 
     const supabase = await createClient();
 
     try {
         const embeddingResponse = await openai.embeddings.create({
             model: OPENAI_EMBEDDING_MODEL,
-            input: completion.choices[0]?.message?.content as string,
+           // input: completion.choices[0]?.message?.content as string,
+            input: query,
             encoding_format: OPENAI_EMBEDDING_ENCODING_FORMAT
         })
 
@@ -163,8 +191,6 @@ async function legal_advice(query: string): Promise<any> {
                 resultStr += "\n\n";
             }
 
-
-
             const finalResponse = await openai.chat.completions.create({
                 model: OPENAI_CHAT_COMPLETIONS_MODEL,
                 messages: [
@@ -179,7 +205,7 @@ async function legal_advice(query: string): Promise<any> {
                 ],
                 temperature: OPENAI_FINAL_RESPONSE_CHAT_COMPLETION_TEMPERATURE
             })
-            console.log('legal return ------------------')
+
             return {
                 legal_advice: finalResponse.choices[0].message.content,
                 sources: obj
@@ -204,7 +230,6 @@ export async function CreateChatSaveMessage(messages: string) {
         .insert({ title: await generateTitle(messages)})
         .select()
         .single()
-    console.log('insert chat ------------------------------------')
     if (chatDataError) {
         console.log(chatDataError)
         return {
@@ -247,10 +272,3 @@ async function generateTitle(message: string) {
     })
     return completion.choices[0].message.content?.replace(/^["']|["']$/g, "");   
 }
-
-// async function getUser(){
-//     const supabase = await createClient()
-//     const {data: {user}} = await supabase.auth.getUser()
-//     console.log('user:', user) 
-//     return user
-// }
