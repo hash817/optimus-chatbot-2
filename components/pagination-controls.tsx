@@ -1,145 +1,98 @@
-"use client";
-
-import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-  PaginationEllipsis,
+import React from 'react';
+import { 
+  Pagination, 
+  PaginationContent, 
+  PaginationItem, 
+  PaginationLink, 
+  PaginationNext, 
+  PaginationPrevious
 } from "@/components/ui/pagination";
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 
 interface PaginationControlsProps {
   currentPage: number;
   totalPages: number;
-  searchResults: any; // Store the full search results
-  onPageChange: (page: number) => void; // Callback for page changes
 }
 
-export function PaginationControls({ 
-  currentPage, 
-  totalPages,
-  searchResults,
-  onPageChange
-}: PaginationControlsProps) {
+export function PaginationControls({ currentPage, totalPages }: PaginationControlsProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  
-  // Create a memoized function to update the URL without triggering a new fetch
-  const createQueryString = useCallback(
-    (name: string, value: string) => {
-      const params = new URLSearchParams(searchParams.toString());
-      params.set(name, value);
-      return params.toString();
-    },
-    [searchParams]
-  );
 
-  const handlePageChange = (page: number) => {
-    // Update URL without causing a full page reload
-    router.push(`${pathname}?${createQueryString('page', page.toString())}`, { 
-      scroll: false 
-    });
-    
-    // Notify parent component about page change to update displayed results
-    onPageChange(page);
+  const createPageURL = (pageNumber: number) => {
+    const params = new URLSearchParams(searchParams);
+    params.set('page', pageNumber.toString());
+    return `${pathname}?${params.toString()}`;
   };
 
-  // Function to generate page numbers array
+  // Calculate which page numbers to show
   const getPageNumbers = () => {
     const pageNumbers = [];
     
     // Always show first page
     pageNumbers.push(1);
     
-    // Add current page and pages around it
-    for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) {
-      if (i === 2 && currentPage > 3) {
-        // Add ellipsis if there's a gap
-        pageNumbers.push("ellipsis-start");
-      }
-      
-      if (!pageNumbers.includes(i)) {
-        pageNumbers.push(i);
-      }
+    // Calculate range around current page
+    let startPage = Math.max(2, currentPage - 1);
+    let endPage = Math.min(totalPages - 1, currentPage + 1);
+    
+    // Add ellipsis after first page if needed
+    if (startPage > 2) {
+      pageNumbers.push('...');
+    }
+    
+    // Add pages around current page
+    for (let i = startPage; i <= endPage; i++) {
+      pageNumbers.push(i);
     }
     
     // Add ellipsis before last page if needed
-    if (currentPage < totalPages - 2 && totalPages > 3) {
-      pageNumbers.push("ellipsis-end");
+    if (endPage < totalPages - 1) {
+      pageNumbers.push('...');
     }
     
-    // Always show last page if we have more than 1 page
-    if (totalPages > 1 && !pageNumbers.includes(totalPages)) {
+    // Always show last page if there is more than one page
+    if (totalPages > 1) {
       pageNumbers.push(totalPages);
     }
     
     return pageNumbers;
   };
 
-  const pageNumbers = getPageNumbers();
+  if (totalPages <= 1) return null;
 
   return (
-    <Pagination>
+    <Pagination className="my-8">
       <PaginationContent>
-        {/* Previous button */}
         <PaginationItem>
-          <PaginationPrevious
-            href="#"
-            onClick={(e) => {
-              if (currentPage > 1) {
-                e.preventDefault();
-                handlePageChange(currentPage - 1);
-              }
-            }}
-            className={currentPage <= 1 ? "pointer-events-none opacity-50" : ""}
+          <PaginationPrevious 
+            href={currentPage > 1 ? createPageURL(currentPage - 1) : '#'}
+            className={currentPage <= 1 ? 'pointer-events-none opacity-50' : ''}
           />
         </PaginationItem>
 
-        {/* Page numbers */}
-        {pageNumbers.map((pageNum, index) => {
-          if (pageNum === "ellipsis-start" || pageNum === "ellipsis-end") {
-            return (
-              <PaginationItem key={`ellipsis-${index}`}>
-                <PaginationEllipsis />
-              </PaginationItem>
-            );
-          }
-
-          return (
-            <PaginationItem key={pageNum}>
-              <PaginationLink
-                href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  handlePageChange(pageNum);
-                }}
-                isActive={pageNum === currentPage}
+        {getPageNumbers().map((page, index) => (
+          <PaginationItem key={index}>
+            {page === '...' ? (
+              <span className="px-4 py-2">...</span>
+            ) : (
+              <PaginationLink 
+                href={createPageURL(page as number)}
+                isActive={page === currentPage}
               >
-                {pageNum}
+                {page}
               </PaginationLink>
-            </PaginationItem>
-          );
-        })}
+            )}
+          </PaginationItem>
+        ))}
 
-        {/* Next button */}
         <PaginationItem>
-          <PaginationNext
-            href="#"
-            onClick={(e) => {
-              if (currentPage < totalPages) {
-                e.preventDefault();
-                handlePageChange(currentPage + 1);
-              }
-            }}
-            className={currentPage >= totalPages ? "pointer-events-none opacity-50" : ""}
+          <PaginationNext 
+            href={currentPage < totalPages ? createPageURL(currentPage + 1) : '#'}
+            className={currentPage >= totalPages ? 'pointer-events-none opacity-50' : ''}
           />
         </PaginationItem>
       </PaginationContent>
     </Pagination>
   );
-}     
+}
