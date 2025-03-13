@@ -61,7 +61,10 @@ export default function Chatbot() {
                         <span className="sr-only">Send</span>
                     </Button>
                 </form></>}
-
+            {isLoading && <div className="flex flex-col items-center space-y-4">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-primary border-opacity-75"></div>
+                <p className="text-primary">Thinking...</p>
+            </div>}
         </div>
 
     );
