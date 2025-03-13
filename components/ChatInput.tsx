@@ -27,7 +27,6 @@ export default function ChatInput() {
             const botAnswerResponse = await botAnswer(inputValue, param.chatId)
             if (!botAnswerResponse.success) throw botAnswerResponse.message
         } catch (error) {
-            console.log(error)
             setErrorMessage(error)
         } finally {
             setIsLoading(false)
@@ -50,7 +49,6 @@ export default function ChatInput() {
                     type="submit"
                     size="icon"
                     variant="ghost"
-                    // className={cn("absolute right-1", isLoading && "animate-pulse")}
                     disabled={isLoading || !inputValue.trim()}
                 >
                     <Send className="h-5 w-5" />

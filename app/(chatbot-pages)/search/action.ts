@@ -27,7 +27,6 @@ export async function search(formData: FormData){
   redirect(`/search?query=${encodeURIComponent(String(formData!.get('query')!))}&page=1`);
 }
 
-// Add cache to avoid duplicate API calls for the same query
 export const performSearch = cache(async (
   query: string,
   page: number = 1,
@@ -36,7 +35,6 @@ export const performSearch = cache(async (
   const supabase = await createClient();
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
-  console.log('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')
   const response = await openai.beta.chat.completions.parse({
     model: OPENAI_CHAT_COMPLETIONS_MODEL,
     messages: [

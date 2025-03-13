@@ -34,7 +34,6 @@ import { createClient } from '@/utils/supabase/client'
 import { useEffect, useState } from 'react'
 import { useRouter } from "next/navigation";
 
-// This is sample data.
 const data = {
   user: {
     name: "shadcn",
@@ -278,7 +277,6 @@ export function AppSidebar({ chats, ...props }: AppSidebarProps) {
 
   useEffect (() => {
      supabase.auth.getUser().then((session) => {
-       console.log(session)
        setUserSession({
         name: session.data.user!.email!.substring(0, session.data.user!.email!.indexOf('@')) as string,
         email:session.data.user!.email as string,

@@ -49,7 +49,6 @@ export async function botAnswer(messages: string, chatId: number)
                     const saveBotMessage = await saveMessage(advice, chatId, "bot", sources)
                     return saveBotMessage
                 } catch (error) {
-                    // console.log("Error with legal advice", error)
                     return {
                         success: false,
                         message: 'Server error. Please try again later'
@@ -57,11 +56,9 @@ export async function botAnswer(messages: string, chatId: number)
                 }
             }
         } else {
-            // console.log('not use legal advice', completion.choices[0].message.content)
             return await saveMessage(completion.choices[0].message.content, chatId, "bot")
         }
     } catch (error) {
-        console.log('api key wrong')
         return {
             success: false,
             message: 'Server error. Please try again later'
@@ -78,7 +75,6 @@ export async function saveMessage(messages: string, chatId: number, role: string
         .insert({ messages, role, chat: chatId, sources: sources });
 
     if (error) {
-        console.log(error);
         return {
             success: false,
             message: 'Server error. Please try again later'
@@ -151,7 +147,6 @@ async function legal_advice(query: string): Promise<any> {
             })
 
             const obj = response.choices[0].message.parsed
-            console.log('obj: ' + obj)
             let resultStr = "";
 
             for (const x of obj!.documents_l) {
@@ -179,13 +174,11 @@ async function legal_advice(query: string): Promise<any> {
                 ],
                 temperature: OPENAI_FINAL_RESPONSE_CHAT_COMPLETION_TEMPERATURE
             })
-            console.log('legal return ------------------')
             return {
                 legal_advice: finalResponse.choices[0].message.content,
                 sources: obj
             }
         } else {
-            console.log("Empty data:", data);
             return "Sorry, optimus is not smart enough to help with your request";
         }
 
@@ -204,9 +197,7 @@ export async function CreateChatSaveMessage(messages: string) {
         .insert({ title: await generateTitle(messages)})
         .select()
         .single()
-    console.log('insert chat ------------------------------------')
     if (chatDataError) {
-        console.log(chatDataError)
         return {
             success: false,
             message: 'Failed to create new conversation window'
@@ -247,10 +238,3 @@ async function generateTitle(message: string) {
     })
     return completion.choices[0].message.content?.replace(/^["']|["']$/g, "");   
 }
-
-// async function getUser(){
-//     const supabase = await createClient()
-//     const {data: {user}} = await supabase.auth.getUser()
-//     console.log('user:', user) 
-//     return user
-// }

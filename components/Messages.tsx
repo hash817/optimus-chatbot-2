@@ -36,7 +36,6 @@ const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!,
 export default function Message({ serverMessages }: { serverMessages: Message[] }) {
     const { isLoading, errorMessage } = useContext(UiContext)
     const [messages, setMessages] = useState(serverMessages)
-    console.log(messages)
 
     useEffect(() => {
         const channel = supabase.channel('supabase_realtime').on('postgres_changes', {

@@ -15,8 +15,8 @@ import {
 interface PaginationControlsProps {
   currentPage: number;
   totalPages: number;
-  searchResults: any; // Store the full search results
-  onPageChange: (page: number) => void; // Callback for page changes
+  searchResults: any;
+  onPageChange: (page: number) => void;
 }
 
 export function PaginationControls({ 
@@ -29,7 +29,6 @@ export function PaginationControls({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   
-  // Create a memoized function to update the URL without triggering a new fetch
   const createQueryString = useCallback(
     (name: string, value: string) => {
       const params = new URLSearchParams(searchParams.toString());
@@ -40,26 +39,20 @@ export function PaginationControls({
   );
 
   const handlePageChange = (page: number) => {
-    // Update URL without causing a full page reload
     router.push(`${pathname}?${createQueryString('page', page.toString())}`, { 
       scroll: false 
     });
     
-    // Notify parent component about page change to update displayed results
     onPageChange(page);
   };
 
-  // Function to generate page numbers array
   const getPageNumbers = () => {
     const pageNumbers = [];
     
-    // Always show first page
     pageNumbers.push(1);
     
-    // Add current page and pages around it
     for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) {
       if (i === 2 && currentPage > 3) {
-        // Add ellipsis if there's a gap
         pageNumbers.push("ellipsis-start");
       }
       
@@ -68,12 +61,10 @@ export function PaginationControls({
       }
     }
     
-    // Add ellipsis before last page if needed
     if (currentPage < totalPages - 2 && totalPages > 3) {
       pageNumbers.push("ellipsis-end");
     }
     
-    // Always show last page if we have more than 1 page
     if (totalPages > 1 && !pageNumbers.includes(totalPages)) {
       pageNumbers.push(totalPages);
     }
@@ -86,7 +77,6 @@ export function PaginationControls({
   return (
     <Pagination>
       <PaginationContent>
-        {/* Previous button */}
         <PaginationItem>
           <PaginationPrevious
             href="#"
@@ -100,7 +90,6 @@ export function PaginationControls({
           />
         </PaginationItem>
 
-        {/* Page numbers */}
         {pageNumbers.map((pageNum, index) => {
           if (pageNum === "ellipsis-start" || pageNum === "ellipsis-end") {
             return (
@@ -126,7 +115,6 @@ export function PaginationControls({
           );
         })}
 
-        {/* Next button */}
         <PaginationItem>
           <PaginationNext
             href="#"

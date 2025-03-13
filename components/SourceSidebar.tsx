@@ -39,13 +39,11 @@ export default function SourceSidebar() {
           .eq("id", selectedMessageId)
 
         if (error) {
-          console.log("Error fetching sources:", error)
           return
         }
 
         if (data && data[0]['sources']) {
           setSources(data[0]['sources']['documents_l'])
-          console.log(data[0]['sources']['documents_l'])
         } else {
           setSources([])
         }
@@ -70,7 +68,7 @@ export default function SourceSidebar() {
           {sources.length > 0 && sources.map((s, i) => (
             <SourceDisplay source={s} key={i} />
           ))}
-          <p className="text-muted-foreground">No sources available for this message.</p>
+          {sources.length == 0 && <p className="text-muted-foreground">No sources available for this message.</p>}
         </div>
       )}
     </>

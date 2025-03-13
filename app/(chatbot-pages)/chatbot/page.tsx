@@ -25,7 +25,6 @@ export default function Chatbot() {
             setIsLoading(true)
             const saveUserMessageResponse = await CreateChatSaveMessage(inputValue)
             if (!saveUserMessageResponse.success) throw saveUserMessageResponse.message
-            // router.push(`/chatbot/${saveUserMessageResponse.id}`)
             const botAnswerResponse = await botAnswer(inputValue, saveUserMessageResponse.id)
             if (!botAnswerResponse.success) throw botAnswerResponse.message
             router.push(`/chatbot/${saveUserMessageResponse.id}`)
