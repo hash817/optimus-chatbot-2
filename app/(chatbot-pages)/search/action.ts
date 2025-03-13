@@ -62,11 +62,9 @@ export const performSearch = cache(async (
     temperature: 0
   })
   const obj = response.choices[0].message.parsed
-  console.log(obj)
   const embeddingResponse = await openai.embeddings.create({
       model: OPENAI_EMBEDDING_MODEL,
       input: obj!.paragraph,
-      //input: query,
       encoding_format: 'float'
   })
 

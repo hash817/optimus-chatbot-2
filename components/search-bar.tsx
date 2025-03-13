@@ -13,7 +13,6 @@ export function SearchBar({ loading = false }: SearchBarProps) {
   const searchParams = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
   
-  // Get the query from URL parameters when component mounts or params change
   useEffect(() => {
     const query = searchParams.get('query') || '';
     setSearchQuery(query);

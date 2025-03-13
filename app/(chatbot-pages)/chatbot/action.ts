@@ -28,7 +28,6 @@ export async function botAnswer(newMessage: string, chatId: number)
     : Promise<{ success: boolean; message: string }> {
 
     try {
-        // Fetch previous messages from Supabase
         const supabase = await createClient();
         const { data: messageHistory, error: messageError } = await supabase
             .from('Message')
@@ -44,17 +43,14 @@ export async function botAnswer(newMessage: string, chatId: number)
             };
         }
         
-        // Format messages for OpenAI
         const formattedMessages = messageHistory.map(msg => ({
           role: msg.role === "bot" ? "assistant" : "user",
           content: msg.messages
       }));
       
         
-        // Add the new message
         formattedMessages.push({ role: "user", content: newMessage });
         
-        // Make the API call with conversation history
         const completion = await openai.chat.completions.create({
             model: OPENAI_CHAT_COMPLETIONS_MODEL,
             messages: [
@@ -62,14 +58,13 @@ export async function botAnswer(newMessage: string, chatId: number)
                     role: "system",
                     content: SAVE_MESSAGE_OPENAI_CHAT_COMPLETIONS_SYSTEM_MESSAGES_CONTENT,
                 },
-                ...formattedMessages, // Include the conversation history
+                ...formattedMessages,
             ],
             temperature: SAVE_MESSAGE_OPENAI_CHAT_COMPLETIONS_TEMPERATURE,
             tools: TOOLS,
             tool_choice: "auto"
         });
         
-        // Process the response (rest of your code)
         if (completion.choices[0].message.tool_calls) {
             for (const toolCall of completion.choices[0].message.tool_calls) {
                 const args = JSON.parse(toolCall.function.arguments);
@@ -88,7 +83,6 @@ export async function botAnswer(newMessage: string, chatId: number)
             return await saveMessage(completion.choices[0].message.content, chatId, "bot")
         }
     } catch (error) {
-        console.log('api key wrong')
         return {
             success: false,
             message: 'Server error. Please try again later'
@@ -124,7 +118,7 @@ async function legal_advice(query: string, conversationHistory: any[] = []): Pro
               role: "system",
               content: OPENAI_CHAT_COMPLETIONS_SYSTEM_MESSAGES_CONTENT
           },
-          ...conversationHistory, // Include conversation history
+          ...conversationHistory,
           {
               role: "user",
               content: query
@@ -138,7 +132,6 @@ async function legal_advice(query: string, conversationHistory: any[] = []): Pro
     try {
         const embeddingResponse = await openai.embeddings.create({
             model: OPENAI_EMBEDDING_MODEL,
-           // input: completion.choices[0]?.message?.content as string,
             input: query,
             encoding_format: OPENAI_EMBEDDING_ENCODING_FORMAT
         })
@@ -203,7 +196,6 @@ async function legal_advice(query: string, conversationHistory: any[] = []): Pro
                 ],
                 temperature: OPENAI_FINAL_RESPONSE_CHAT_COMPLETION_TEMPERATURE
             })
-            console.log('legal return ------------------')
             return {
                 legal_advice: finalResponse.choices[0].message.content,
                 sources: obj
