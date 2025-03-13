@@ -6,6 +6,7 @@ import { ChatMessage } from "@/components/ChatMessage"
 import { createClient } from "@supabase/supabase-js";
 import { UiContext } from "@/store/ui-context";
 import { Bot } from "lucide-react";
+import { useParams } from "next/navigation";
 
 interface Message {
     id: number;
@@ -35,11 +36,16 @@ const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!,
 
 export default function Message({ serverMessages }: { serverMessages: Message[] }) {
     const { isLoading, errorMessage } = useContext(UiContext)
+    const param = useParams<{ chatId: string }>();
     const [messages, setMessages] = useState(serverMessages)
 
     useEffect(() => {
+      window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+  }, [messages]);
+  
+    useEffect(() => {
         const channel = supabase.channel('supabase_realtime').on('postgres_changes', {
-            event: 'INSERT', schema: 'public', table: 'Message'
+            event: 'INSERT', schema: 'public', table: 'Message', filter: `chat=eq.${param.chatId}`
         }, (payload) => {
             setMessages(prev => [...prev, payload.new as Message])
         }).subscribe()

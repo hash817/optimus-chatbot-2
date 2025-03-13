@@ -71,7 +71,7 @@ export const performSearch = cache(async (
   const embeddingVector = embeddingResponse.data[0].embedding;
 
   const { data, error, count } = await supabase.rpc("hybrid_search_judgments", {
-    query_text: obj!.paragraph,
+    query_text: obj!.title ? query : obj!.paragraph,
     query_embedding: embeddingVector,
     full_text_weight: 1.3,
     semantic_weight: 1.0,

@@ -20,6 +20,7 @@ interface Judgment {
   judgment_date: string;
   court: string;
   keyword: string;
+  citations: string;
 }
 
 export default function Search() {
@@ -114,6 +115,7 @@ export default function Search() {
               judgment_date={item.judgment_date}
               court={item.court}
               keyword={item.keyword}
+              citations={item.citations}
             />
           ))}
           <PaginationControls

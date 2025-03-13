@@ -8,9 +8,10 @@ interface JudgmentCardProps {
   judgment_date: string
   keyword: string
   id: number
+  citations: string
 }
 
-export function JudgmentCard({ title, paragraph_summary, original_url, court, judgment_date, keyword, id }: JudgmentCardProps) {
+export function JudgmentCard({ title, paragraph_summary, original_url, court, judgment_date, keyword, id, citations }: JudgmentCardProps) {
   return (
     <div className="p-4 mb-4 bg-white rounded shadow">
       <h2 className="text-lg font-semibold text-gray-800">
@@ -27,6 +28,9 @@ export function JudgmentCard({ title, paragraph_summary, original_url, court, ju
       </p>
       <p className="mt-1 text-sm text-gray-500">
         <strong>Keywords:</strong> {keyword}
+      </p>
+      <p className="mt-1 text-sm text-gray-500">
+        <strong>Citations:</strong> {citations}
       </p>
     </div>
   );

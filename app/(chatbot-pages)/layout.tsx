@@ -32,7 +32,10 @@ export default async function RootLayout({
   if (!user) {
     return redirect('/sign-in')
   }
-  const { data } = await supabase.from('chat').select()
+  const { data } = await supabase
+  .from('chat')
+  .select()
+  .order('created_at', { ascending: false });
 
   return (
     <>

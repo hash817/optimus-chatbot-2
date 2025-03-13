@@ -132,7 +132,7 @@ async function legal_advice(query: string, conversationHistory: any[] = []): Pro
     try {
         const embeddingResponse = await openai.embeddings.create({
             model: OPENAI_EMBEDDING_MODEL,
-            input: query,
+            input: completion.choices[0]?.message?.content as string,
             encoding_format: OPENAI_EMBEDDING_ENCODING_FORMAT
         })
 
@@ -201,7 +201,7 @@ async function legal_advice(query: string, conversationHistory: any[] = []): Pro
                 sources: obj
             }
         } else {
-            return "Sorry, optimus is not smart enough to help with your request";
+            return "Sorry, OptimusLex is not smart enough to help with your request";
         }
 
     } catch (error) {
